@@ -1,0 +1,93 @@
+#!/bin/bash
+## run flags ##
+run_flag="$1"
+gen_log_dir="${PWD}"
+## reporting mechanisms ##
+report_end() {
+ if [[ "$run_flag" == "ustccloud" ]] ; then
+  mail -s "VASP job finished: {$run_flag}|{${PWD##*/}}" xiangzhang1@outlook.com <<< EOM
+ fi
+}
+trap report_end EXIT
+## calculation ##
+mkdir -p NOW
+for p in `cat ${gen_log_dir}/gen.log`
+do
+ if [[ $p == \#* ]] ; then
+  continue
+ fi
+ echo ${PWD} $p `date` 
+ echo -------------------------------------
+ rm -rf ./NOW/tag_*
+ rm -rf vasprun.xml
+ touch ./NOW/tag_${p}
+ if [ ! -f ./NOW/POTCAR ]  ; then
+  cp ./POTCAR ./NOW/POTCAR
+ fi
+ if [ ! -f ./NOW/POSCAR ] ; then
+  cp ./POSCAR ./NOW/POSCAR
+ fi
+ if [ -f ./NOW/CONTCAR ] && [ -s ./NOW/CONTCAR ] ; then
+  cp ./NOW/CONTCAR ./NOW/POSCAR
+ fi
+ cp INCAR-${p} ./NOW/INCAR
+ cp KPOINTS-${p} ./NOW/KPOINTS
+ cd ./NOW/
+ case $run_flag in
+  ustcscc_vasp.5.3)
+   mpijob /home/bsc/zkdsnbzx/src/vasp.5.3/vasp
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  ustcscc_vasp.5.2)
+   mpijob /home/bsc/zkdsnbzx/src/vasp.5.2/vasp
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  ustccloud_8cores)
+   mpdallexit
+   mpdboot -f /home/zkdsnbzx/work/cloud/mpd_8.hosts -n 2
+   mpiexec -machinefile /home/zkdsnbzx/mpd.hosts -np 8 /home/zkdsnbzx/work/cloud/vasp </dev/null
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  test)
+   :
+   ;;
+  ustccloud_16cores)
+   mpdallexit
+   mpdboot -f /home/zkdsnbzx/work/cloud/mpd_16.hosts -n 2
+   mpiexec -machinefile /home/zkdsnbzx/mpd.hosts -np 16 /home/zkdsnbzx/work/cloud/vasp </dev/null
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  test)
+   :
+   ;;
+  laptop_2cores)
+   mpiexec -np 2 /home/zkdsnbzx/src/vasp.5.3.2/vasp.5.3/vasp </dev/null
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  laptop_4cores)
+   mpiexec -np 4 /home/zkdsnbzx/src/vasp.5.3.2/vasp.5.3/vasp </dev/null
+   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+    report_end; exit 1
+   fi
+   ;;
+  *)
+   echo "wrong run flag. exiting."
+   exit 1
+   ;;
+  esac
+ cd ../
+ cp -r ./NOW ${p}
+ echo -------------------------------------
+ echo ${PWD} $p OVER HERE `date`                                                                
+ echo;echo
+done

@@ -1,0 +1,36 @@
+#!/bin/bash
+cp INCAR-$filename INCAR
+cp KPOINTS-$filename KPOINTS
+cp POSCAR POSCAR5
+sed -i '6d' POSCAR
+$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1
+cp POSCAR5 POSCAR
+rm POSCAR5
+rm CHGCAR OUTPAR vasprun.xml WAVECAR
+space_arraygrid=`cat .tmp.makeparamlog | grep "^ arrays on large grid" | awk '{print $8}'`
+space_wavefunc=`cat .tmp.makeparamlog | grep "^ [1-9] sets of wavefunctions" | awk '{print $5}'`
+space_projector_real=`cat .tmp.makeparamlog | grep "^ projectors in real space" | awk '{print $5}'`
+space_projector_reciprocal=`cat .tmp.makeparamlog | grep "^ projectors in reciprocal space" | awk '{print $5}'`
+space_projector_real=${space_projector_real/#-/}
+space_projector_reciprocal=${space_projector_reciprocal/#-/}
+if [[ -z $space_wavefunc ]] || [[ -z $space_projector_real ]] || [[ -z $space_projector_reciprocal ]] ; then
+    echo "gen.source.check.memory error in {${filename}} | {${nullifiedkw[sname]}}, folder {/${PWD##*/}}: unable to read makeparam output. please check .tmp.makeparamlog"
+    exit 64
+fi
+if [[ -z ${nullifiedkw[mempernode]} ]] ; then
+    echo "gen.source.check.memory warning: FAILED becauase mempernode is not specified"
+    exit
+fi
+#calculate memory usage proj * npar + [ 3 * ] wavefunction + [ 1.5 * ] numbernodes
+if [[ ${modnames[hse06_l]} == "1" ]] || [[ ${modnames[hse06_h]} == "1" ]] ; then
+ space_total=$((($space_projector_real*${keywords[npar]}+$space_projector_reciprocal*${keywords[npar]}+3*$space_wavefunc*${keywords[kpar]})/1024/1024/1024+${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}))
+else 
+ space_total=$((($space_projector_real*${keywords[npar]}+$space_projector_reciprocal*${keywords[npar]}+$space_wavefunc*${keywords[kpar]})/1024/1024/1024+${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*3/2))
+fi
+expected_allocatable_space=$((${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*${nullifiedkw[mempernode]}))
+if (( $expected_allocatable_space < $space_total )) ; then
+        echo "***MEMORY WARNING*** in {${filename}} | {${nullifiedkw[sname]}}, folder {/${PWD##*/}}: expected used memory {$space_total}GB > expected allocatable space {$expected_allocatable_space}GB"
+else
+        echo "check.memory report: in {${filename}} | {${nullifiedkw[sname]}}, folder {/${PWD##*/}}: expected used memory {$space_total}GB"
+fi
+rm .tmp.makeparamlog INCAR KPOINTS

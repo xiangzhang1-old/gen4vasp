@@ -1,0 +1,7 @@
+#!/bin/bash
+#============customize POTCAR============
+rm -rf POTCAR
+for i in $element
+do
+ $SCRIPTDIR/pot $i
+done

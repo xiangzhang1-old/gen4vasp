@@ -1,0 +1,92 @@
+#!/bin/bash
+#get elements-string element and nelement
+if [ ! -f POSCAR ] ; then 
+echo "POSCAR not found!"
+exit 64
+fi
+element=`sed -n '6p' POSCAR`	#element: string of elements "La Ba V Zr O"
+nelement=`echo $element| wc -w`	#nelement: how many types of elements. 5 in this case
+#iterate over $nelement types of elements for $MAGMOM "2 -2 2 -2"
+lmaxmix=4
+for ((i=1;i<=$nelement;i++))
+do
+name="$name`sed -n '6p' POSCAR | awk -v number=$i '{print $number}'`"
+name="$name`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`"
+ele=`sed -n '6p' POSCAR | awk -v number=$i '{print $number}'`
+nele=`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`
+if [ "$ele" == 'La' ] ; then
+ lmaxmix=6
+fi
+mag=0
+magdefault=3
+for k in 'Cr' 'Fe' 'Cu' 'Ni' 'Pd' 'V'  'Mn' 'Hf' 'Nb' 'Sc' 'Tc' 'Y' 'Ir' 'La' 'Zr' 'Mo' 'Os' "Zn" "Ti" "Ru"
+do
+ if [ "$ele" == $k ] ; then
+  mag=$magdefault
+ fi
+done
+if [ "${modnames[fm]}" == "1" ] ; then
+    if [[ -z "$MAGMOM" ]] ; then
+        MAGMOM="$nele*$mag"
+    else
+        MAGMOM="$MAGMOM $nele*$mag"
+    fi
+elif [[ "${modnames[afm]}" == "1" ]] ; then
+    halfnele=$(($nele/2))
+    if [[ -z "$MAGMOM" ]] ; then
+        MAGMOM="$halfnele*$mag $halfnele*-$mag"
+    else
+        MAGMOM="$MAGMOM $halfnele*$mag $halfnele*-$mag"
+    fi
+fi
+done
+#iterate over elements-tring for u $hubbardu and j $hubbardj and NION NELECT
+NELECT=0
+for i in $element
+do
+unset u
+unset j
+u=`cat $SCRIPTDIR/UJdatabase | grep "$i " | awk '{printf "%3.1f", $2 }'`
+j=`cat $SCRIPTDIR/UJdatabase | grep "$i " | awk '{printf "%3.1f", $3 }'`
+if [ -z "$u" ] ;then
+u=0
+j=0
+fi
+hubbardu="$hubbardu $u"
+hubbardj="$hubbardj $j"
+done
+NION=0
+for i in `sed -n '7p' POSCAR`
+do
+NION=$(($NION+$i))
+done
+for i in $(seq 1 $nelement)
+do
+ele=`echo $element | awk -v number=$i '{print $number}'`
+rm -rf POTCAR
+$SCRIPTDIR/pot $ele
+ZVAL=`cat POTCAR | grep ZVAL | awk '{print $6}'`
+ZVAL=`printf "%.0f" "$ZVAL"`
+ATOMEACH=`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`
+NELECT=$(($ZVAL*$ATOMEACH+$NELECT))
+done
+rm -rf POTCAR
+#------------------var:filename--------------
+filename=""
+for modname in ${!modnames[@]}; do
+    if [[ ${modnames["$modname"]} == 1 ]] ; then
+        if [[ -z "$filename" ]] ; then
+            filename="$modname"
+        else
+            filename="${filename}_${modname}"
+        fi
+    fi
+done
+filename="${filename}-${keywords[sname]}"
+keywords[filename]="$filename"
+#------------------var:system-----------------
+optional_flag=1
+fromvar=name
+tovar=system
+fromto_comment='fromvar=name, tovar=system (as in INCAR). gen.source.poscar.'
+source $SCRIPTDIR/gen.source.fromto

@@ -1,0 +1,15 @@
+#!/bin/bash
+#---------------vars------------------------
+if [[ -z "${keywords[totalnumbercores]}" ]]  ; then
+    echo "gen.source.eth_fast error: totalnumbercores not set. exiting."
+    exit 64
+fi
+if [[ -z "${keywords[corespernode]}" ]]  ; then
+    echo "gen.source.eth_fast error: corespernode not set. exiting."
+    exit 64
+fi
+npar=$((${keywords[totalnumbercores]}/${keywords[corespernode]}))
+fromvar=npar
+tovar=npar
+fromto_comment='npar=$((${keywords[totalnumbercores]}/${keywords[corespernode]}))'
+source $SCRIPTDIR/gen.source.fromto

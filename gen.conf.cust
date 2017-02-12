@@ -1,0 +1,24 @@
+nonmag::ispin=1::1
+dos::emax=-10,emin=10,nedos=1000,lorbit=11::0
+fm::ispin=2::1
+afm::ispin=2::1
+dos:hse06_l,hse06_h:icharg=11::1
+dos::istart=2::1
+isnotmetal:hse06_l,hse06_h:ismear=-5::1
+ismetal,opt::ismear=1,sigma=0.2::1
+ismetal:opt,hse06_l,hse06_h:ismear=-5::1
+hse06_l:dos:ismear=0,sigma=0.2,nedos=1000::1:accrdng to vasp output, for hf dos, preconverge with ismear>=0, then do ismear=-5 and algo=D
+hse06_l::precfock=Low,prec=Normal,nkredx=2,nkredy=2,nkredz=2,lorbit=11::0:emuch->bulk hse06 prec=Normal suffice,myBa2VZrTest->precfock=Low/nkred=223 suffice
+hse06_l:ncl:istart=1::0
+hse06_l,ismetal::algo=Damped::1
+hse06_l,isnotmetal::algo=All::1
+hse06_h:dos:ismear=0,sigma=0.2,nedos=1000::1
+hse06_h::prec=Normal::0
+hse06_h::precfock=Normal,icharg=2,lorbit=11::1
+hse06_h,isnotmetal::algo=All::1
+hse06_h:ncl:istart=1::0
+hse06_h,ismetal::algo=Damped::1
+ncl:hse06_h,hse06_l:icharg=11::1
+generic:opt:lorbit=11::0
+prehf::nedos=1000::0
+generic:opt,prehf:nedos=301::0

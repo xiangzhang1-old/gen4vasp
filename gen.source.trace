@@ -1,0 +1,55 @@
+#!!/bin/bash
+#similar to the "trace" command in Shockwave Flash. prints out the entire data structure.
+echo "Active modules: "
+for modname in "${!modnames[@]}" 
+do
+    if [[ ${modnames["$modname"]} == 0 ]] ; then
+        continue
+    fi
+    echo -e "\t" $modname
+    #get kwname
+    var="${modname}_ckw[@]"
+    eval "modname_ckw_string=\"\${!$var}\""
+    var="${modname}_nckw[@]"
+    eval "modname_nckw_string=\"\${!$var}\""
+    #print kwname
+    echo -n -e '\t\t'
+    for kwname in $modname_ckw_string ; do
+        kwval="${keywords[$kwname]}"
+        if [[ ${#kwval} > 10 ]] ; then
+            printf "%-20s" "${kwname}"
+        else
+            printf "%-10s" "${kwname}"
+        fi
+    done    
+    echo -n -e "\t|\t"
+    for kwname in $modname_nckw_string ; do
+        kwval="${keywords[$kwname]}"
+        if [[ ${#kwval} > 10 ]] ; then
+            printf "%-20s" "${kwname}"
+        else
+            printf "%-10s" "${kwname}"
+        fi
+    done 
+    echo
+    #print kwval
+    echo -n -e '\t\t'
+    for kwname in $modname_ckw_string ; do
+        kwval="${keywords[$kwname]}"
+        if [[ ${#kwval} > 10 ]] ; then
+            printf "%-20s" "${kwval}"
+        else
+            printf "%-10s" "${kwval}"
+        fi
+    done    
+    echo -n -e "\t|\t"
+    for kwname in $modname_nckw_string ; do
+        kwval="${keywords[$kwname]}"
+        if [[ ${#kwval} > 10 ]] ; then
+            printf "%-20s" "${kwval}"
+        else
+            printf "%-10s" "${kwval}"
+        fi
+    done    
+    echo
+done

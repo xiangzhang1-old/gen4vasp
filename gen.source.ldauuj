@@ -1,0 +1,9 @@
+#!/bin/bash
+#---------------vars:ldauu,ldauj-----------------
+fromvar=hubbardu
+tovar=ldauu
+fromto_comment='u,j values of ldau are read automatically.'
+source $SCRIPTDIR/gen.source.fromto
+fromvar=hubbardj
+tovar=ldauj
+source $SCRIPTDIR/gen.source.fromto

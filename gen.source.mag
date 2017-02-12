@@ -1,0 +1,5 @@
+#!/bin/bash
+fromvar=MAGMOM
+tovar=magmom
+fromto_comment='MAGMOM values are determined automatically in gen.source.poscar'
+source $SCRIPTDIR/gen.source.fromto

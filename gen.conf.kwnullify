@@ -1,0 +1,3 @@
+::sname,filename,kpoints,totalnumbercores,corespernode,mempernode
+fm,ncl::magmom
+afm,ncl::magmom

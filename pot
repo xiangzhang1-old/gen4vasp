@@ -1,0 +1,26 @@
+#!/bin/sh
+##########S:POTCAR/POTCAR FILE!!!!
+#echo "PLEASE READ POT SCRIPT. STH NEEDS FIXING and i'm lazy today"
+####################################
+#Program:
+#	Extract element POTCAR (PAW_PBE) from $pot directory
+ele1=$1
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pot=$SCRIPTDIR
+ele=`ls $pot/paw_pbe/ | grep $ele1 |sed -n '1p'` 
+if [ -f $pot/paw_pbe/$ele/POTCAR.Z ] ; then 
+   zcat $pot/paw_pbe/$ele/POTCAR.Z >> POTCAR;
+elif [ -f $pot/paw_pbe/$ele/POTCAR ] ; then 
+   cat $pot/paw_pbe/$ele/POTCAR >> POTCAR;
+elif [ -f $pot/paw_pbe/$ele/POTCAR.gz ] ; then 
+   zcat $pot/paw_pbe/$ele/POTCAR.gz >> POTCAR;
+elif [ -f $pot/paw_pbe/"$ele"_sv/POTCAR  ] ; then 
+   cat $pot/paw_pbe/"$ele"_sv/POTCAR >> POTCAR;
+elif [ -f $pot/paw_pbe/"$ele"_sv/POTCAR.Z  ] ; then 
+   zcat $pot/paw_pbe/"$ele"_sv/POTCAR.Z >> POTCAR;
+elif [ -f $pot/paw_pbe/"$ele"_sv/POTCAR.gz ] ; then 
+   zcat $pot/paw_pbe/"$ele"_sv/POTCAR.gz >> POTCAR;
+else
+   echo "pot error: No {$ele} element pseudopotential found! Aborting..."
+   exit 64
+fi

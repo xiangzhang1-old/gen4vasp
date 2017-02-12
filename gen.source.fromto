@@ -1,0 +1,27 @@
+#!/bin/bash
+case $optional_flag in
+ 1)
+    if [[ -z "${keywords[$tovar]}" ]] ; then
+        eval "declare -A keywords[$tovar]=\"\${$fromvar}\""
+    elif [[ "${keywords[$tovar]}" != "${!fromvar}" ]] ; then
+        echo "gen.source.fromto error: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: customized {$tovar} value {${!fromvar}} /= already there value ${keywords[$tovar]}. Comment: {$fromto_comment}" 
+        exit 64
+    fi
+    ;;
+ 0)
+    if [[ -z "${keywords[$tovar]}" ]] ; then
+        eval "declare -A keywords[$tovar]=\"\${$fromvar}\""
+    elif [[ "${keywords[$tovar]}" != "${!fromvar}" ]] ; then
+        echo "gen.source.fromto warning: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: attempted to othercust customize {$tovar} value {${!fromvar}}, but value ${keywords[$tovar]} is already there. othercust not mandatory, given up. Comment: {$fromto_comment}"
+    fi
+    ;;
+ *)
+    echo "gen.source.fromto warning: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: the script was called without optional_flag specified. Comment: {$fromto_comment}"
+    if [[ -z "${keywords[$tovar]}" ]] ; then
+        eval "declare -A keywords[$tovar]=\"\${$fromvar}\""
+    elif [[ "${keywords[$tovar]}" != "${!fromvar}" ]] ; then
+        echo "gen.source.fromto error: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: customized {$tovar} value {${!fromvar}} /= already there value {${keywords[$tovar]}}. Comment: {$fromto_comment}"
+        exit 64
+    fi
+    ;;
+esac

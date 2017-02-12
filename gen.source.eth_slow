@@ -1,0 +1,7 @@
+#!/bin/bash
+#---------------vars------------------------
+npar="${keywords[totalnumbercores]}"
+fromvar=npar
+tovar=npar
+fromto_comment='in eth_slow, npar=totalnumbercores'
+source $SCRIPTDIR/gen.source.fromto

@@ -1,0 +1,40 @@
+.SUFFIXES: .inc .f .F
+#-----------------------------------------------------------------------
+# Makefile for IBM RS6000
+#-----------------------------------------------------------------------
+
+# C-preprocessor
+CPP     = /usr/ccs/lib/cpp -P -C   $*.F >$*.f
+FC=xlf
+
+CFLAGS = -O
+FFLAGS = -O3
+FREE   = -qfree=f90
+
+DOBJ =  preclib.o timing.o derrf.o dclock.o  diolib.o dlexlib.o drdatab.o 
+
+#-----------------------------------------------------------------------
+# general rules
+#-----------------------------------------------------------------------
+
+libdmy.a: $(DOBJ) lapack_double.o
+	-rm libdmy.a
+	ar vq libdmy.a $(DOBJ)
+
+# files which do not require autodouble 
+lapack_double.o: lapack_double.f
+	$(FC) $(FFLAGS) $(NOFREE) -c lapack_double.f
+lapack_single.o: lapack_single.f
+	$(FC) $(FFLAGS) $(NOFREE) -c lapack_single.f
+lapack_cray.o: lapack_cray.f
+	$(FC) $(FFLAGS) $(NOFREE) -c lapack_cray.f
+
+.c.o:
+	$(CC) $(CFLAGS) -c $*.c
+.F.o:
+	$(CPP) 
+	$(FC) $(FFLAGS) $(FREE) $(INCS) -c $*.f
+.F.f:
+	$(CPP) 
+.f.o:
+	$(FC) $(FFLAGS) $(FREE) $(INCS) -c $*.f

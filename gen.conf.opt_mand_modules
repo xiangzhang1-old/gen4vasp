@@ -1,0 +1,7 @@
+1:generic
+1:nonmag,fm,afm
+1:eth_fast,eth_slow,eth_normal
+1:ismetal,isnotmetal
+0,1:hse06_l,hse06_h,prehf
+0,1:ldau,hse06_l,hse06_h
+0,1:hse06_l,hse06_h,dos:it is pointless to do non-scf dos calculation with hse. anyway chgcar will have to be recalculated with impacts of wavecar included

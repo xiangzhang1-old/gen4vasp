@@ -1,0 +1,154 @@
+.SUFFIXES: .inc .f .F
+#-----------------------------------------------------------------------
+# Makefile for FUJITSU VPP
+# the Makefile also works on the VX series if the in the option
+# -K is removed from the LINK options
+#
+# PLEASE READ BEFORE COMPILATION:
+# 
+# according to our information it is advicable to type
+#    sedxcgrad xcspin.F xcgrad.F 
+# before starting the makefile. Only in that case inlining will
+# be done for xcspin.F and xcgrad.F. 
+#
+# According to Peter Kaeckell it is adviceable to set
+# -DCACHE_SIZE=524287  in the line CPP
+# in the INCAR file NBLK should be  set to a large value
+# i.e. NBLK = 1024 
+# for best performance
+#
+#-----------------------------------------------------------------------
+
+# all CPP processed fortran files have the extension .f 
+SUFFIX=.f
+
+# fortran compiler
+FC      = frt
+FCL=$(FC)
+
+# C-preprocessor define any of the flags given below
+# single_precission     single precission BLAS/LAPACK calls
+# vector
+# essl                  use ESSL call sequence for DSYGV
+# NGXhalf               charge density   reduced in X direction
+# NGZhalf               charge density   reduced in Z direction
+# wNGXhalf              gamma point only reduced in X direction
+# wNGZhalf              gamma point only reduced in Z direction
+CPP     = preprocess <$*.F| /lib/cpp -P -DHOST=\"VPP\" \
+           -Dkind8 -DNGXhalf -Dvector -DUSE_ERF >$*.f
+
+
+# general fortran flags
+FFLAGS = -Free -X9  -Z $*.lst -Pl -Aabm -Wv,-md,-Of,-noalias
+# -Wv    use VP/EX compiler
+#    ,md Ouputs all vectorization messages
+# -Pl    create listing with nesting level of doloops
+# -Ad    single to double precission
+
+
+# optimization for VPP in Paris
+OFLAG  = -Of,-p,-e -Elepmu
+OFLAG_HIGH = $(OFLAG)
+OBJ_HIGH = none
+OBJ_NOOPT = none
+DEBUG  = -On -Os,-R
+#set options for inlining
+INLINE = -Ne,200
+
+# options for linking
+LINK    = -Wl,-P,-J
+LIB     = -L. -L../vasp.4.lib -L/usr/local/lib  ../vasp.4.lib/linpack_double.o  ../vasp.4.lib/lapack_double.o -lblasvp -ldmy
+#LIB     = -L. -L../vasp.lib -ldmy -L/opt/px/lib -lblasvp -llapackvp -lblasvp 
+
+FFT3D   = fft3dfurth.o fft3dlib.o
+#FFT3D   = fft3dfujitsu.o ftflop.o
+
+#-----------------------------------------------------------------------
+# general rules and compile lines
+#-----------------------------------------------------------------------
+BASIC=   symmetry.o symlib.o   lattlib.o  random.o   
+
+SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
+         constant.o jacobi.o   main_mpi.o  scala.o   \
+         asa.o      lattice.o  poscar.o   ini.o      setex.o     radial.o  \
+         pseudo.o   mgrid.o    mkpoints.o wave.o      wave_mpi.o  $(BASIC) \
+         nonl.o     nonlr.o    dfast.o    choleski2.o    \
+         mix.o      charge.o   xcgrad.o   xcspin.o    potex1.o   potex2.o  \
+         metagga.o  constrmag.o pot.o      cl_shift.o force.o    dos.o      elf.o      \
+         tet.o      hamil.o    steep.o    \
+         chain.o    dyna.o     relativistic.o LDApU.o sphpro.o  paw.o   us.o \
+         ebs.o      wavpre.o   wavpre_noio.o broyden.o \
+         dynbr.o    rmm-diis.o reader.o   writer.o   tutor.o xml_writer.o \
+         brent.o    stufak.o   fileio.o   opergrid.o stepver.o  \
+         dipol.o    xclib.o    chgloc.o   subrot.o   optreal.o   davidson.o \
+         edtest.o   electron.o shm.o      pardens.o  paircorrection.o \
+         optics.o   constr_cell_relax.o   stm.o    finite_diff.o \
+         elpol.o    setlocalpp.o 
+ 
+INC=
+
+vasp: $(SOURCE) $(FFT3D) $(INC) main.o 
+	rm -f vasp
+	$(FCL) -o vasp $(LINK) main.o  $(SOURCE)   $(FFT3D) $(LIB) 
+makeparam: $(SOURCE) $(FFT3D) makeparam.o main.F $(INC)
+	$(FCL) -o makeparam  $(LINK) makeparam.o $(SOURCE) $(FFT3D) $(LIB)
+zgemmtest: zgemmtest.o base.o random.o $(INC)
+	$(FCL) -o zgemmtest $(LINK) zgemmtest.o random.o base.o $(LIB)
+dgemmtest: dgemmtest.o base.o random.o $(INC)
+	$(FCL) -o dgemmtest $(LINK) dgemmtest.o random.o base.o $(LIB) 
+ffttest: base.o smart_allocate.o mpi.o mgrid.o random.o ffttest.o $(FFT3D) $(INC)
+	$(FCL) -o ffttest $(LINK) ffttest.o mpi.o mgrid.o random.o smart_allocate.o base.o $(FFT3D) $(LIB)
+kpoints: $(SOURCE) $(FFT3D) makekpoints.o main.F $(INC)
+	$(FCL) -o kpoints $(LINK) makekpoints.o $(SOURCE) $(FFT3D) $(LIB)
+
+clean:	
+	-rm -f *.g *.f *.o *.L *.mod ; touch *.F
+
+main.o: main$(SUFFIX)
+	$(FC) $(FFLAGS)$(DEBUG)  $(INCS) -c main$(SUFFIX)
+xcgrad.o: xcgrad$(SUFFIX)
+	$(FC) $(FFLAGS) $(INLINE)  $(INCS) -c xcgrad$(SUFFIX)
+xcspin.o: xcspin$(SUFFIX)
+	$(FC) $(FFLAGS) $(INLINE)  $(INCS) -c xcspin$(SUFFIX)
+
+makeparam.o: makeparam$(SUFFIX)
+	$(FC) $(FFLAGS)$(DEBUG)  $(INCS) -c makeparam$(SUFFIX)
+
+makeparam$(SUFFIX): makeparam.F main.F 
+#
+# MIND: I do not have a full dependency list for the include
+# and MODULES: here are only the minimal basic dependencies
+# if one strucuture is changed then touch_dep must be called
+# with the corresponding name of the structure
+#
+base.o: base.inc base.F
+mgrid.o: mgrid.inc mgrid.F
+constant.o: constant.inc constant.F
+lattice.o: lattice.inc lattice.F
+setex.o: setexm.inc setex.F
+pseudo.o: pseudo.inc pseudo.F
+poscar.o: poscar.inc poscar.F
+mkpoints.o: mkpoints.inc mkpoints.F
+wave.o: wave.inc wave.F
+nonl.o: nonl.inc nonl.F
+nonlr.o: nonlr.inc nonlr.F
+
+$(OBJ_HIGH):
+	$(CPP)
+	$(FC) $(FFLAGS) $(OFLAG_HIGH) $(INCS) -c $*$(SUFFIX)
+$(OBJ_NOOPT):
+	$(CPP)
+	$(FC) $(FFLAGS) $(INCS) -c $*$(SUFFIX)
+
+fft3dlib_f77.o: fft3dlib_f77.F
+	$(CPP)
+	$(F77) $(FFLAGS_F77) -c $*$(SUFFIX)
+
+.F.o:
+	$(CPP)
+	$(FC) $(FFLAGS) $(OFLAG) $(INCS) -c $*$(SUFFIX)
+.F$(SUFFIX):
+	$(CPP)
+$(SUFFIX).o:
+	$(FC) $(FFLAGS) $(OFLAG) $(INCS) -c $*$(SUFFIX)
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+#---------------vars------------------------
+kpar=1
+fromto_comment='in hse calculations, kpar=1,npar=totalnumbercores'
+npar="${keywords[totalnumbercores]}"
+fromvar=npar
+tovar=npar
+source $SCRIPTDIR/gen.source.fromto
+fromvar=kpar
+tovar=kpar
+source $SCRIPTDIR/gen.source.fromto

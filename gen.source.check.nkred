@@ -1,0 +1,19 @@
+#!/bin/bash
+kpointsx=`echo ${keywords[kpoints]} | awk '{print $1}'`
+kpointsy=`echo ${keywords[kpoints]} | awk '{print $2}'`
+kpointsz=`echo ${keywords[kpoints]} | awk '{print $3}'`
+tmpnkredx="${keywords[nkredx]}"
+tmpnkredy="${keywords[nkredy]}"
+tmpnkredz="${keywords[nkredz]}"
+if (( $kpointsx % $tmpnkredx != 0)) ; then
+    echo "gen.source.nkred error: kpointsx {$kpointsx} must be divisible by nkredx {$tmpnkredx}"
+    exit 64
+fi
+if (( $kpointsy % $tmpnkredy != 0)) ; then
+    echo "gen.source.nkred error: kpointsy {$kpointsy} must be divisible by nkredy {$tmpnkredy}"
+    eyit 64
+fi
+if (( $kpointsz % $tmpnkredz != 0)) ; then
+    echo "gen.source.nkred error: kpointsz {$kpointsz} must be divisible by nkredz {$tmpnkredz}"
+    ezit 64
+fi

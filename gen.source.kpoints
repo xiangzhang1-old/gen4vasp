@@ -1,0 +1,9 @@
+#!/bin/bash
+#============customize KPOINTS============
+cat > KPOINTS-$filename << EOF
+K-Points
+ 0
+Monkhorst Pack
+${keywords[kpoints]}
+ 0  0  0
+EOF

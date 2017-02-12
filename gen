@@ -1,0 +1,558 @@
+#!/bin/bash
+
+#------technical pre-things------
+set -e
+shopt -s extglob
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#==============0. SETUP==============
+while read line || [ -n "$line" ]; do
+    #declare modnames ( [modname1]=modname1_flag ...    )
+    modname=`awk -F ':' '{print $1}' <<< "$line"`
+    if [[ -z "$modname" ]] ; then
+        echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: config file syntax error. module name should not be empty. line is {$line}"
+        exit 64
+    fi
+    declare -A modnames["$modname"]=0
+    #declare modname_nckw ( [kwname]=kwval, [kwname]=kwval, ...)
+    modname_nckw_string=`awk -F ':' '{print $2}' <<< "$line"`
+    IFS=',' read -ra modname_nckw_array <<< "$modname_nckw_string"      #read -ra: 遇到”换行“继续读
+    for kwnamevalpair in "${modname_nckw_array[@]}"; do
+        kwname=`awk -F '=' '{print $1}' <<< "$kwnamevalpair"`
+        kwval=`awk -F '=' '{print $2}' <<< "$kwnamevalpair"`
+        if [ -z "$kwname" ] || [ -z "$kwval" ] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: config file syntax error. keyword {$kwname} value should not be null. it's not designed so that you could \"set null\""
+            exit
+        fi
+        declare -A "${modname}_nckw"["$kwname"]="$kwval"
+        # var="${modname}_nckw"["$kwname"]; echo ${!var}; would expand var from "${modname}_nckw"["kwname"] to opt_nckw[isif], then proceeds to run ${opt_nckw[isif]}
+    done
+    #declare modname_ckw ( [kwname1] [kwname2], ...)
+    modname_ckw_string=`awk -F ':' '{print $3}' <<< "$line"`
+    IFS=',' read -ra modname_ckw_array <<< "$modname_ckw_string"
+    for kwname in "${modname_ckw_array[@]}"; do
+        declare -A "${modname}_ckw"["$kwname"]=""
+    done
+done < $SCRIPTDIR/gen.conf.modules
+
+#==============1. INPUT==============
+#--------------1.1 cmd-line开工--------------
+while [[ "$#" > 0 ]]; do
+    #assign accalimed modules
+    shift_flag=0    #shift 1 if $1 is modname; 2 if otherwise when $1 is regarded as kwname
+    ismodule_flag=0
+    for modname in "${!modnames[@]}"    # echo ${!modnames[@]}; would list all variable names in associative array modnames. echo ${modnames[@]} would list all variable values.
+    do
+        if [ "$modname" == "$1" ] ; then
+            modnames[$modname]=1
+            shift_flag=1
+            ismodule_flag=1
+            break
+        fi
+    done
+    if [[ $ismodule_flag == 1 ]] ; then
+        shift;continue
+    fi
+    #assign acclaimed keywords
+    #1) check that claims are not self-conflicting
+    if [[ ! -z ${keywords["$1"]} ]] ; then
+        echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: more than one assignment for keyword $1"
+        exit 64
+    fi
+    #2) check that claim syntax are right i.e. contain $1 and $2
+    if [[ -z "$2" ]] ; then
+        echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: $1 is not a module. no value is supplied for keyword $1. "
+        exit 64
+    fi
+    declare -A keywords["$1"]="$2"
+    shift 2
+done
+#--------------1.2 NC 占坑--------------
+for modname in "${!modnames[@]}"
+do
+    if [[ ${modnames["$modname"]} == 0 ]] ; then
+        continue
+    fi
+    #keywords in ${modname}_nckw
+    var="${modname}_nckw[@]"
+    eval "modname_nckw_string=\"\${!$var}\""
+    for kwname in $modname_nckw_string
+    do
+        var="${modname}_nckw[$kwname]"
+        if [[ -z ${keywords["$kwname"]} ]]  ; then
+            declare -A keywords["$kwname"]=${!var}
+        elif [[ "${keywords[$kwname]}" != ${!var} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: attempting to overwrite {keyword[$kwname]==${keywords[$kwname]}}, with nckw value {$var=${!var}}. "
+            exit 64
+        fi
+    done
+done
+#--------------1.3 CUST 反正得出勤--------------
+declare -A modnames[virtual]=1
+#--------------othercust----------------------
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    othercust_nc=`awk -F ':' '{print $3}' <<< "$line"`
+    othercust_c=`awk -F ':' '{print $4}' <<< "$line"`
+    batchname=`awk -F ':' '{print $5}' <<< "$line"`
+    optional_flag=`awk -F ':' '{print $6}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra othercust_nc_array <<< "$othercust_nc"
+    IFS=',' read -ra othercust_c_array <<< "$othercust_c"
+    IFS=',' read -ra batchname_array <<< "$batchname"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in gen.conf.othercust line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for batchfile in ${batchname_array[@]} ; do
+            if [[ ! -f $SCRIPTDIR/$batchfile ]] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: othercust cannot find batchfile {$batchfile}"
+                exit 64
+            fi
+            source $SCRIPTDIR/$batchfile
+        done
+        for kwname in ${othercust_c_array[@]} ; do
+            declare -A virtual_ckw[$kwname]=""
+        done
+        for kwname in ${othercust_nc_array[@]} ; do
+            declare -A virtual_nckw[$kwname]="placeholder"
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.othercust
+#--------------confcust----------------------
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    cust_nc=`awk -F ':' '{print $3}' <<< "$line"`
+    cust_c=`awk -F ':' '{print $4}' <<< "$line"`
+    force_flag=`awk -F ':' '{print $5}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra cust_nc_array <<< "$cust_nc"
+    IFS=',' read -ra cust_c_array <<< "$cust_c"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in conf.cust line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for kwname in ${cust_c_array[@]} ; do
+            if [[ -z "${keywords[$kwname]}" ]] ;then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: conf.cust ifyes {$ifyes} ifnot {$ifnot} requires changeable keyword {$kwname} to be set. it is not."
+                exit 64
+            fi
+            declare -A virtual_ckw[$kwname]=""
+        done
+        for kwnamevalpair in "${cust_nc_array[@]}"; do
+            kwname=`awk -F '=' '{print $1}' <<< "$kwnamevalpair"`
+            kwval=`awk -F '=' '{print $2}' <<< "$kwnamevalpair"`
+            if [ -z "$kwname" ] || [ -z "$kwval" ] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: conf.cust file syntax error. keyword {$kwname} value should not be null. it's not designed so that you could \"set null\""
+                exit
+            fi
+            if [[ ! -z "${keywords[$kwname]}" ]] && [[ "${keywords[$kwname]}" != "$kwval" ]] ; then
+                if [[ $force_flag == 1 ]] ; then
+                    echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: attempting to overwrite keyword {$kwname}, value currently {${keywords[$kwname]}}, with cust value $kwval; ref gen.conf.cust line {$line}"
+                    exit 64
+                else
+                    echo "warning in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: conf.cust attempted to overwrite keyword {$kwname} value {${keywords[$kwname]}} with cust value $kwval, but failed; overwrite is not mandatory; ref gen.conf.cust line {$line}"
+                    declare -A virtual_nckw[$kwname]="placeholder"
+                    continue
+                fi
+            fi
+            declare -A keywords[$kwname]="$kwval"
+            declare -A virtual_nckw[$kwname]="placeholder"
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.cust
+
+#=============2. CHECK==============
+#--------------2.1 check kwc--------------
+#all active module keywords, changeable or non-changeable, are non-empty; otherwise quit---------
+for modname in "${!modnames[@]}"
+do
+    if [[ ${modnames["$modname"]} == 0 ]] ; then
+        continue
+    fi
+    #keywords in ${modname}_ckw
+    var="${modname}_ckw[@]"
+    eval "modname_ckw_string=\"\${!$var}\""
+    for kwname in $modname_ckw_string
+    do
+        if [[ -z ${keywords["$kwname"]} ]]  ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: changeable keyword {$modname} . {$kwname} not set"
+            exit
+        fi
+    done
+    #keywords in ${modname}_nckw
+    var="${modname}_nckw[@]"
+    eval "modname_nckw_string=\"\${!$var}\""
+    for kwname in $modname_nckw_string
+    do
+        if [[ -z ${keywords["$kwname"]} ]]  ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: changeable keyword {$modname} . {$kwname} not set"
+            exit
+        fi
+    done
+done
+#--------------2.2 optional mandatory mod--------------
+while read line || [ -n "$line" ]; do
+    sum_actmod_string=`awk -F ':' '{print $1}' <<< "$line"`
+    opt_mand_mod_string=`awk -F ':' '{print $2}' <<< "$line"`
+    IFS=',' read -ra sum_actmod_array <<< "$sum_actmod_string"
+    IFS=',' read -ra opt_mand_mod_array <<< "$opt_mand_mod_string"
+    sum_opt_mand_mod=0
+    for opt_mand_modname in ${opt_mand_mod_array[@]}; do
+        var=${modnames["$opt_mand_modname"]}
+        if [[ -z "$var" ]] ; then
+            var=0
+        fi
+        sum_opt_mand_mod=$(($sum_opt_mand_mod+$var))
+    done
+    ok_flag=0
+    for sum_actmod in ${sum_actmod_array[@]} ; do
+        if [[ "$sum_opt_mand_mod" == "$sum_actmod" ]] ; then
+            ok_flag=1
+        fi
+    done
+    if [[ "$ok_flag" != "1" ]] ; then
+        echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: {$sum_actmod_string} of the following modules {$opt_mand_mod_string} should be loaded; actually {$sum_opt_mand_mod} are."
+        exit 64
+    fi
+done < $SCRIPTDIR/gen.conf.opt_mand_modules
+#---------------2.3 keys are sane------------------------
+#ensure that all keywords belong to active modules; otherwise set to ""---------------
+for kwname in ${!keywords[@]}; do
+    kw_orphan_flag=1   #keyword is an 'orphan' i.e. does not belong to module
+    for modname in "${!modnames[@]}" ; do
+        if [[ ${modnames["$modname"]} == "0" ]] ; then
+            continue
+        fi
+        var="${modname}_nckw[@]"
+        eval "modname_nckw_string=\"\${!$var}\""
+        for mod_kwname in $modname_nckw_string ; do
+            if [[ $mod_kwname == $kwname ]] ; then
+                kw_orphan_flag=0
+            fi
+        done
+        var="${modname}_ckw[@]"
+        eval "modname_ckw_string=\"\${!$var}\""
+        for mod_kwname in $modname_ckw_string ; do
+            if [[ $mod_kwname == $kwname ]] ; then
+                kw_orphan_flag=0
+            fi
+        done
+    done
+    if [[ $kw_orphan_flag == 1 ]] ; then
+        echo "warning in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: $kwname does not belong to any active module, but you have set it. it is now being set to \"\""
+        keywords["$kwname"]=""
+    fi
+done
+#-----------2.4 keyword checks: if $ifyes modules present and $ifnot not present, run $batchname; adopted from othercust-------------------
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    batchname=`awk -F ':' '{print $3}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra batchname_array <<< "$batchname"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in gen.conf.check line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for batchfile in ${batchname_array[@]} ; do
+            if [[ ! -f $SCRIPTDIR/$batchfile ]] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: gen.source.check cannot find batchfile {$batchfile}"
+                exit 64
+            fi
+            source $SCRIPTDIR/$batchfile
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.check
+#------------2.5 keyword nulliify, write KPOINTS----------------------------------
+source $SCRIPTDIR/gen.source.kpoints
+while read line || [ -n "$line" ] ; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    kwnullify=`awk -F ':' '{print $3}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra kwnullify_array <<< "$kwnullify"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in conf.kwnullify line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for kwname in "${kwnullify_array[@]}"; do
+            if [[ -z "${keywords[$kwname]}" ]] ; then
+                echo "warning: in {${filename}} | {${keywords[sname]}}: keyword {$kwname}, designed to be nullified in conf.kwnullify line {$line}, is already empty. Something might be wrong."
+            else
+                eval "declare -A nullifiedkw[$kwname]=\"\${keywords[$kwname]}\""
+                keywords[$kwname]=""
+            fi
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.kwnullify
+#------------2.6 keyword bans: kwban_bc(ban content),kwban_bkw (ban keyword)----------------------------
+while read line || [ -n "$line" ] ; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    kwban_bc=`awk -F ':' '{print $3}' <<< "$line"`
+    kwban_bkw=`awk -F ':' '{print $4}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra kwban_bc_array <<< "$kwban_bc"
+    IFS=',' read -ra kwban_bkw_array <<< "$kwban_bkw"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in conf.cust line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for kwnamevalpair in "${kwban_bc_array[@]}"; do
+            kwname=`awk -F '=' '{print $1}' <<< "$kwnamevalpair"`
+            kwval=`awk -F '=' '{print $2}' <<< "$kwnamevalpair"`
+            if [[ "${keywords[$kwname]}" == "$kwval" ]] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: the value {$kwval} of keyword {$kwname}  is banned (i.e. should not be this value). ref: gen.conf.kwban line {$line}"
+                exit 64
+            fi
+        done
+        for kwname in ${kwban_bkw_array[@]} ; do
+            if [[ ! -z "${keywords[$kwname]}" ]] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: keyword {$kwname}, whose value {${keywords[kwname]}}, is banned (i.e. should be \"\". ref: gen.conf.kwban line {$line}"
+                exit 64
+            fi
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.kwban
+
+#=============3. OUTPUT==============
+#in group of modules except for virtual, output keywords to incar-$filename, kpoints-$filename
+source $SCRIPTDIR/gen.source.write_to_genlog
+rm -f INCAR-$filename POTCAR
+source $SCRIPTDIR/gen.source.potcar
+for modname in "${!modnames[@]}"
+do
+    if [[ ${modnames["$modname"]} == 0 ]] ; then
+        continue
+    fi
+    if [[ "$modname" == "virtual" ]] ; then
+        continue
+    fi
+    echo "# $modname:" >> INCAR-$filename
+    #keywords in ${modname}_nckw
+    var="${modname}_nckw[@]"
+    eval "modname_nckw_string=\"\${!$var}\""
+    for kwname in $modname_nckw_string
+    do
+        if [[ ! -z "${keywords[$kwname]}" ]] ;then
+            echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+        fi
+    done
+    #keywords in ${modname}_ckw
+    var="${modname}_ckw[@]"
+    eval "modname_ckw_string=\"\${!$var}\""
+    for kwname in $modname_ckw_string
+    do
+
+        if [[ ! -z "${keywords[$kwname]}" ]] ;then
+            echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+        fi
+    done
+done
+#according to conf.othercust, output keywords to incar
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    othercust_nc=`awk -F ':' '{print $3}' <<< "$line"`
+    othercust_c=`awk -F ':' '{print $4}' <<< "$line"`
+    batchname=`awk -F ':' '{print $5}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra othercust_nc_array <<< "$othercust_nc"
+    IFS=',' read -ra othercust_c_array <<< "$othercust_c"
+    IFS=',' read -ra batchname_array <<< "$batchname"
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        echo "# othercust $line " >> INCAR-$filename
+        for kwname in ${othercust_c_array[@]} ; do
+            if [[ ! -z "${keywords[$kwname]}" ]] ;then
+                echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+            fi
+        done
+        for kwname in ${othercust_nc_array[@]} ; do
+            if [[ ! -z "${keywords[$kwname]}" ]] ;then
+                echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+            fi
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.othercust
+#according to conf.cust, output keywords to incar
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    cust_nc=`awk -F ':' '{print $3}' <<< "$line"`
+    cust_c=`awk -F ':' '{print $4}' <<< "$line"`
+    force_flag=`awk -F ':' '{print $5}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra cust_nc_array <<< "$cust_nc"
+    IFS=',' read -ra cust_c_array <<< "$cust_c"
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        echo "# cust $line " >> INCAR-$filename
+        for kwname in ${cust_c_array[@]} ; do
+            if [[ ! -z "${keywords[$kwname]}" ]] ;then
+                echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+            fi
+        done
+        for kwnamevalpair in "${cust_nc_array[@]}"; do
+            kwname=`awk -F '=' '{print $1}' <<< "$kwnamevalpair"`
+            kwval=`awk -F '=' '{print $2}' <<< "$kwnamevalpair"`
+            if [[ ! -z "${keywords[$kwname]}" ]] ;then
+                echo "    ${kwname^^} = ${keywords[$kwname]} " >> INCAR-$filename
+            fi
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.cust
+#source $SCRIPTDIR/gen.source.trace
+
+
+#-----------4 post-all check: if $ifyes modules present and $ifnot not present, run $batchname; adopted from othercust-------------------
+while read line || [ -n "$line" ]; do
+    ifyes=`awk -F ':' '{print $1}' <<< "$line"`
+    ifnot=`awk -F ':' '{print $2}' <<< "$line"`
+    batchname=`awk -F ':' '{print $3}' <<< "$line"`
+    ifyes_flag=1
+    IFS=',' read -ra ifyes_array <<< "$ifyes"
+    IFS=',' read -ra ifnot_array <<< "$ifnot"
+    IFS=',' read -ra batchname_array <<< "$batchname"
+    for modname in ${ifyes_array[@]} ${ifnot_array[@]} ; do
+        if [[ -z ${modnames[$modname]} ]] ; then
+            echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: mod {$modname} mentioned in gen.conf.check line {$line} does not actually exist. "
+            exit 64
+        fi
+    done
+    for modname in ${ifyes_array[@]} ; do
+        if [[ ${modnames[$modname]} == "0" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    for modname in ${ifnot_array[@]} ; do
+        if [[ ${modnames[$modname]} == "1" ]] ; then
+            ifyes_flag=0
+            break
+        fi
+    done
+    if [[ $ifyes_flag == "1" ]] ; then
+        for batchfile in ${batchname_array[@]} ; do
+            if [[ ! -f $SCRIPTDIR/$batchfile ]] ; then
+                echo "error in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: gen.source.check cannot find batchfile {$batchfile}"
+                exit 64
+            fi
+            source $SCRIPTDIR/$batchfile
+        done
+    fi
+done < $SCRIPTDIR/gen.conf.postcheck

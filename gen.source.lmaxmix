@@ -1,0 +1,6 @@
+#!/bin/bash
+#----------vars:lmaxmix-----------------------
+fromvar=lmaxmix
+tovar=lmaxmix
+fromto_comment='lmaxmix values are determined automatically in gen.source.poscar'
+source $SCRIPTDIR/gen.source.fromto

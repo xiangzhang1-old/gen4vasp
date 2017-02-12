@@ -1,0 +1,5 @@
+nonmag:::magmom
+isnotmetal:::sigma
+hse06_l::isym=2,icharg=11,icharg=1::isym=2 is not a good idea for hf calculation.
+hse06_h::isym=2,icharg=11,icharg=1:
+ncl::istart=1,istart=2::refer to ncl manual
