@@ -1,7 +1,4 @@
-#!/bin/sh
-##########S:POTCAR/POTCAR FILE!!!!
-#echo "PLEASE READ POT SCRIPT. STH NEEDS FIXING and i'm lazy today"
-####################################
+#!/bin/bash
 #Program:
 #	Extract element POTCAR (PAW_PBE) from $pot directory
 ele1=$1

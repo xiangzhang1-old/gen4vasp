@@ -4,6 +4,8 @@
 set -e
 shopt -s extglob
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+declare -A modnames
+declare -A keywords
 
 #==============0. SETUP==============
 while read line || [ -n "$line" ]; do
