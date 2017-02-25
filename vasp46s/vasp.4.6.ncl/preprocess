@@ -1,4 +1,0 @@
-#
-#  move the directives (#) to the   beginning of the line
-#  
-sed -e '1,$s/^ *#/#/g'

@@ -3,5 +3,5 @@
 rm -rf POTCAR
 for i in $element
 do
- $SCRIPTDIR/pot $i
+ pot $i
 done

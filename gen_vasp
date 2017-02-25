@@ -1,14 +1,27 @@
 #!/bin/bash
+# ------------------------------------------
+# Function: 
+# Script for running gen-generated serial jobs.
+# Usage:
+# 1. Edit the vasp_command, which is basically how you'd run vasp once, by uncommenting the appropriate line. # Good for saving work, bad for module-based.
+# 2. Run gen_vasp
+# History:
+# 2017/02/24 Xiang: updated description.
+# ------------------------------------------
+
 ## run flags ##
-run_flag="$1"
+#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_std"
+#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_gam"
+vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_ncl"
+#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu"
 gen_log_dir="${PWD}"
+
 ## reporting mechanisms ##
 report_end() {
- if [[ "$run_flag" == "ustccloud" ]] ; then
-  mail -s "VASP job finished: {$run_flag}|{${PWD##*/}}" xiangzhang1@outlook.com <<< EOM
- fi
+  mail -s "VASP job finished: {$vasp_caller}|{${PWD##*/}}" 8576361405@vtext.com <<< EOM
 }
 trap report_end EXIT
+
 ## calculation ##
 mkdir -p NOW
 for p in `cat ${gen_log_dir}/gen.log`
@@ -33,59 +46,13 @@ do
  cp INCAR-${p} ./NOW/INCAR
  cp KPOINTS-${p} ./NOW/KPOINTS
  cd ./NOW/
- case $run_flag in
-  ustcscc_vasp.5.3)
-   mpijob /home/bsc/zkdsnbzx/src/vasp.5.3/vasp
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  ustcscc_vasp.5.2)
-   mpijob /home/bsc/zkdsnbzx/src/vasp.5.2/vasp
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  ustccloud_8cores)
-   mpdallexit
-   mpdboot -f /home/zkdsnbzx/work/cloud/mpd_8.hosts -n 2
-   mpiexec -machinefile /home/zkdsnbzx/mpd.hosts -np 8 /home/zkdsnbzx/work/cloud/vasp </dev/null
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  test)
-   :
-   ;;
-  ustccloud_16cores)
-   mpdallexit
-   mpdboot -f /home/zkdsnbzx/work/cloud/mpd_16.hosts -n 2
-   mpiexec -machinefile /home/zkdsnbzx/mpd.hosts -np 16 /home/zkdsnbzx/work/cloud/vasp </dev/null
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  test)
-   :
-   ;;
-  laptop_2cores)
-   mpiexec -np 2 /home/zkdsnbzx/src/vasp.5.3.2/vasp.5.3/vasp </dev/null
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  laptop_4cores)
-   mpiexec -np 4 /home/zkdsnbzx/src/vasp.5.3.2/vasp.5.3/vasp </dev/null
-   if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
-    report_end; exit 1
-   fi
-   ;;
-  *)
-   echo "wrong run flag. exiting."
-   exit 1
-   ;;
-  esac
+ ## vasp it!
+ eval ${vasp_command}
+ if [[ `tail -1 vasprun.xml` != "</modeling>" ]] ; then
+  report_end; exit 1
+ fi
  cd ../
+ ## end vasp it!
  cp -r ./NOW ${p}
  echo -------------------------------------
  echo ${PWD} $p OVER HERE `date`                                                                
