@@ -1,4 +1,4 @@
-generic::istart,icharg,prec,ispin,kpoints,isym,lreal,ediff,npar,corespernode,totalnumbercores,kpar,mempernode,ismear
+generic:algo=fast:istart,icharg,prec,ispin,kpoints,isym,lreal,ediff,npar,corespernode,totalnumbercores,kpar,mempernode,ismear
 opt:ibrion=2:isif,nsw,ediffg
 dos:lorbit=11,ismear=-5::refers to the non-selfconsistent read-chgcar calculation
 ldau:ldau=.TRUE.:
