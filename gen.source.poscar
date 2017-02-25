@@ -17,14 +17,12 @@ nele=`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`
 if [ "$ele" == 'La' ] ; then
  lmaxmix=6
 fi
-mag=0
-magdefault=3
-for k in 'Cr' 'Fe' 'Cu' 'Ni' 'Pd' 'V'  'Mn' 'Hf' 'Nb' 'Sc' 'Tc' 'Y' 'Ir' 'La' 'Zr' 'Mo' 'Os' "Zn" "Ti" "Ru"
-do
- if [ "$ele" == $k ] ; then
-  mag=$magdefault
- fi
-done
+## magmom for the element
+unset mag
+mag=`cat $SCRIPTDIR/Mdatabase | grep "$i " | awk '{printf "%3.1f", $2 }'`
+if [ -z "$mag" ] ;then
+mag=0.6
+fi
 if [ "${modnames[fm]}" == "1" ] ; then
     if [[ -z "$MAGMOM" ]] ; then
         MAGMOM="$nele*$mag"
