@@ -1,10 +1,18 @@
 #!/bin/bash
 #Program:
 #	Extract element POTCAR (PAW_PBE) from $pot directory
+#Usage:
+#	pot pours $ele1/POTCAR into current POTCAR.
+#	but, if POTdatabase contains Pb Pb_d entry, then Pb_d instead of Pb is used as ele
 ele1=$1
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 pot=$SCRIPTDIR
-ele=`ls $pot/paw_pbe/ | grep $ele1 |sed -n '1p'` 
+# real element name. default to POTdatabase, then first listed folder containing $ele1 char
+ele=`cat $SCRIPTDIR/POTdatabase | grep "$ele1 " | awk '{printf "%s", $2 }'`
+if [ -z $ele ] ; then
+ ele=`ls $pot/paw_pbe/ | grep $ele1 |sed -n '1p'` 
+fi
+# pour the POTCAR
 if [ -f $pot/paw_pbe/$ele/POTCAR.Z ] ; then 
    zcat $pot/paw_pbe/$ele/POTCAR.Z >> POTCAR;
 elif [ -f $pot/paw_pbe/$ele/POTCAR ] ; then 

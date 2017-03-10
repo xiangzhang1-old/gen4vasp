@@ -3,17 +3,24 @@
 # Function: 
 # Script for running gen-generated serial jobs.
 # Usage:
-# 1. Edit the vasp_command, which is basically how you'd run vasp once, by uncommenting the appropriate line. # Good for saving work, bad for module-based.
-# 2. Run gen_vasp
+# 1. Edit the localization and run_flags parts, which is basically how you'd run vasp once, by uncommenting the appropriate line.
+# 2. Edit gen.log. Comment out lines by #
+# 3. Run gen_vasp
 # History:
 # 2017/02/24 Xiang: updated description.
+# 2017/02/25 Xiang: compromise - flexible - tunable. localize at each machine. at dellpc, std/gam/gpu/ncl.
 # ------------------------------------------
 
+## localization ##
+numbercores="$1"
+flavor="$2"
+if [[ -z $numbercores ]] || [[ -z $flavor ]] ; then
+  echo 'localized usage: gen_vasp $numbercores $flavor'
+  exit 64
+fi
+
 ## run flags ##
-#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_std"
-#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_gam"
-vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_ncl"
-#vasp_command="mpiexec.hydra -n 20 /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu"
+vasp_command="mpiexec.hydra -n $numbercores /home/xzhang1/src/vasp.5.4.1/bin/vasp_$flavor"
 gen_log_dir="${PWD}"
 
 ## reporting mechanisms ##

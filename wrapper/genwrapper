@@ -1,0 +1,1 @@
+nohup gen_vasp 20 std 2>&1 >> run.log &
