@@ -1,5 +1,8 @@
 #!/bin/bash
 cp INCAR-$filename INCAR
+if [[ ${keywords[isym]} == -1 ]] ; then # makeparam doesn't seem to work with isym=-1
+ sed -i 's/ISYM = -1/ISYM = 0/g' INCAR
+fi
 cp KPOINTS-$filename KPOINTS
 cp POSCAR POSCAR5
 sed -i '6d' POSCAR
@@ -26,6 +29,9 @@ if [[ ${modnames[hse06_l]} == "1" ]] || [[ ${modnames[hse06_h]} == "1" ]] ; then
  space_total=$((($space_projector_real*${keywords[npar]}+$space_projector_reciprocal*${keywords[npar]}+3*$space_wavefunc*${keywords[kpar]})/1024/1024/1024+${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}))
 else 
  space_total=$((($space_projector_real*${keywords[npar]}+$space_projector_reciprocal*${keywords[npar]}+$space_wavefunc*${keywords[kpar]})/1024/1024/1024+${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*3/2))
+fi
+if [[ $keywords[isym] == -1 ]] ; then # makeparam doesn't seem to work with isym=-1, so i used memory@isym0*2. a 2-factor might be overkill? well, i'm lazy...
+ space_total=$(($space_total*2))
 fi
 expected_allocatable_space=$((${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*${nullifiedkw[mempernode]}))
 if (( $expected_allocatable_space < $space_total )) ; then
