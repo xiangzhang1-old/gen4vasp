@@ -1,6 +1,6 @@
 generic:algo=fast:istart,icharg,prec,ispin,kpoints,isym,lreal,ediff,npar,corespernode,totalnumbercores,kpar,mempernode,ismear,encut
 opt:ibrion=2:isif,nsw,ediffg
-dos:lorbit=11,ismear=-5::refers to the non-selfconsistent read-chgcar calculation
+dos:lorbit=11::refers to the non-selfconsistent read-chgcar calculation. ismear=-5 is universally suggested by vasp_guide.
 ldau:ldau=.TRUE.:
 hse06_l:lhfcalc=.TRUE.,hfscreen=0.2,time=0.4,icharg=0,isym=0:nelm,nkredx,nkredy,nkredz:according to researchgate, for hf calculations the charge density includes contribution from hatree-fock wavef, so nonselfconsistent is forbidden.
 hse06_h:lhfcalc=.TRUE.,hfscreen=0.2,time=0.4,isym=0:nelm
