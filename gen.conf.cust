@@ -2,8 +2,8 @@ nonmag::ispin=1::1
 dos::emax=-10,emin=10,nedos=1000,lorbit=11::0
 fm::ispin=2::1
 afm::ispin=2::1
-dos:hse06_l,hse06_h:icharg=11::1
-dos::istart=1::0:sometimes it's necessary to reoptimize wavecar since dimensions have changed.
+dos:hse06_l,hse06_h:icharg=11::0:usually it suffices to fix chgcar, since charge density converges fast with k. 
+dos::istart=1::0:usually it's necessary to reoptimize wavecar since dimensions have changed.
 isnotmetal:hse06_l,hse06_h:ismear=-5,sigma=0.05::0:vasp_guide suggest ismear=-5, but 0 is fine. but many use 0 for speed pretty dos.
 ismetal,opt::ismear=1,sigma=0.2::1
 ismetal:opt,hse06_l,hse06_h:ismear=-5::1
