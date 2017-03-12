@@ -1,4 +1,24 @@
 #!/bin/bash
+#----------vars:nbands-----------------------
+if [[ ${modnames[ncl]} == 1 ]] ; then
+ NBANDS=$(($NELECT*3/5+$NION*3/2))
+ NBANDS=$(($NBANDS*2))
+elif [[ ${modnames[nonmag]} != 1 ]] ; then
+ NBANDS=$(($NELECT*3/5+$NION*1/2))
+else
+ NBANDS=$(($NION/2+$NELECT/2))
+fi
+if [[ ${modnames[ncl]} == 1 ]] ; then
+    NBANDS=$(($NBANDS*2))
+fi
+if [[ -z ${keywords[npar]} ]] ; then
+ echo "error: gen.source.nbands require that npar be set. it is not. exiting."
+ exit 1
+fi
+if [[ ${modnames[prehf]} == 1 ]] || [[ ${modnames[hse06_l]} == 1 ]] || [[ ${modnames[hse06_h]} == 1 ]] ; then
+ NBANDS=$((($NBANDS+${keywords[npar]}-1)/${keywords[npar]}*${keywords[npar]}))
+fi
+fromvar=NBANDS
 tovar=nbands
-fromto_comment='nbands value are determined, as enforcing, using the VASP default algorithm read from main.F, in gen.source.ncl.'
+fromto_comment='nbands value are determined, as enforcing, using the VASP default algorithm read from main.F, in gen.source.nbands.'
 source $SCRIPTDIR/gen.source.fromto

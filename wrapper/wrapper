@@ -1,2 +1,0 @@
-~/src/qchem/gen4vasp/gen npar 20 sname fixcopt generic mempernode 96 kpar 1 icharg 1 corespernode 20 totalnumbercores 20 istart 0 ediff 1E-5 ispin 2 lreal .FALSE. isym 0 prec Accurate kpoints "11 11 11" fm isnotmetal encut 500 opt isif 1 nsw 90 ediffg -1E-2
-~/src/qchem/gen4vasp/gen npar 20 sname dos generic mempernode 96 kpar 1 corespernode 20 totalnumbercores 20 ediff 1E-5 ispin 2 lreal .FALSE. isym 0 prec Accurate kpoints "17 17 17" fm isnotmetal encut 500 dos nedos 1500
