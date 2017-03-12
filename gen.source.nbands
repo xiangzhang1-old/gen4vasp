@@ -1,0 +1,4 @@
+#!/bin/bash
+tovar=nbands
+fromto_comment='nbands value are determined, as enforcing, using the VASP default algorithm read from main.F, in gen.source.ncl.'
+source $SCRIPTDIR/gen.source.fromto

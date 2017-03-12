@@ -1,5 +1,16 @@
 #!/bin/bash
+#==============gen.log==================
+if [[ -f ./gen.log ]] ; then
+    while read line || [ -n "$line" ] ; do
+        if [[ "$line" == "$filename" ]] ;then
+            echo "error: same sname (filename postfix) has already been used. please change!"
+            exit 64
+        fi
+    done < ./gen.log
+fi
+echo $filename >> gen.log
 #============customize POTCAR============
+rm -f INCAR-$filename POTCAR
 rm -rf POTCAR
 for i in $element
 do

@@ -1,4 +1,4 @@
-::filename,system:sname:gen.source.poscar:1
+::filename,system:sname:gen.source.poscar,gen.source.potcar:1
 fm:ncl:magmom::gen.source.mag:1
 afm:ncl:magmom::gen.source.mag:1
 ldau::ldauu,ldauj,lmaxmix::gen.source.ldauuj,gen.source.lmaxmix:1
@@ -8,4 +8,5 @@ hse06_l::npar,kpar::gen.source.hse_par:1
 hse06_h::npar,kpar::gen.source.hse_par:1
 eth_fast:::npar,totalnumbercores,corespernode:gen.source.eth_fast:0
 eth_slow::npar:totalnumbercores,corespernode:gen.source.eth_slow:0
-ncl:::nbands:gen.source.ncl:1:this thing needs npar to be set. also lmaxmix.
+ncl::nbands,lmaxmix::gen.source.nbands,gen.source.lmaxmix:1
+prencl::lmaxmix::gen.source.lmaxmix:1

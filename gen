@@ -407,9 +407,6 @@ done < $SCRIPTDIR/gen.conf.kwban
 
 #=============3. OUTPUT==============
 #in group of modules except for virtual, output keywords to incar-$filename, kpoints-$filename
-source $SCRIPTDIR/gen.source.write_to_genlog
-rm -f INCAR-$filename POTCAR
-source $SCRIPTDIR/gen.source.potcar
 for modname in "${!modnames[@]}"
 do
     if [[ ${modnames["$modname"]} == 0 ]] ; then
