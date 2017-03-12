@@ -18,7 +18,7 @@ hse06_h::precfock=Normal,icharg=2,lorbit=11::1
 hse06_h,isnotmetal::algo=All::1
 hse06_h:ncl:istart=1::0
 hse06_h,ismetal::algo=Damped::1
-ncl:hse06_h,hse06_l:icharg=11,istart=1::1
+ncl:hse06_h,hse06_l:icharg=11::1
 generic:opt:lorbit=11::0
 prehf::nedos=1500::0
 generic:opt,prehf:nedos=1500::0
