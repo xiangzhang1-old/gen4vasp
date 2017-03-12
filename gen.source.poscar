@@ -7,16 +7,12 @@ fi
 element=`sed -n '6p' POSCAR`	#element: string of elements "La Ba V Zr O"
 nelement=`echo $element| wc -w`	#nelement: how many types of elements. 5 in this case
 #iterate over $nelement types of elements for $MAGMOM "2 -2 2 -2"
-lmaxmix=4
 for ((i=1;i<=$nelement;i++))
 do
 name="$name`sed -n '6p' POSCAR | awk -v number=$i '{print $number}'`"
 name="$name`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`"
 ele=`sed -n '6p' POSCAR | awk -v number=$i '{print $number}'`
 nele=`sed -n '7p' POSCAR | awk -v number=$i '{print $number}'`
-if [ "$ele" == 'La' ] ; then
- lmaxmix=6
-fi
 ## magmom for the element
 unset mag
 mag=`cat $SCRIPTDIR/Mdatabase | grep "$i " | awk '{printf "%3.1f", $2 }'`
