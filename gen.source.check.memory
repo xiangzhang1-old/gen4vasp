@@ -1,12 +1,12 @@
 #!/bin/bash
 cp INCAR-$filename INCAR
 if [[ ${keywords[isym]} == -1 ]] ; then # makeparam doesn't seem to work with isym=-1
- sed -i 's/ISYM = -1/ISYM = 0/g' INCAR
+ sed -i "s/ISYM = -1/ISYM = 0/g" INCAR
 fi
 cp KPOINTS-$filename KPOINTS
 cp POSCAR POSCAR5
 sed -i '6d' POSCAR
-$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1
+$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 && echo "gen.source.check.memory warning: makeparam failed"
 cp POSCAR5 POSCAR
 rm POSCAR5
 rm CHGCAR OUTPAR vasprun.xml WAVECAR
