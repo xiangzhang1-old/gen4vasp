@@ -5,7 +5,7 @@ ldau:ldau=.TRUE.:
 hse06_l:lhfcalc=.TRUE.,hfscreen=0.2,time=0.4,icharg=0,isym=0:nelm,nkredx,nkredy,nkredz:according to researchgate, for hf calculations the charge density includes contribution from hatree-fock wavef, so nonselfconsistent is forbidden.
 hse06_h:lhfcalc=.TRUE.,hfscreen=0.2,time=0.4,isym=0:nelm
 prencl:isym=-1:
-ncl:lsorbit=.TRUE.,gga_compat=.FALSE.,isym=-1,istart=0:saxis:see gen.conf.kwban for why istart=0 is much preferred
+ncl:lsorbit=.TRUE.,gga_compat=.FALSE.,istart=0:saxis:see gen.conf.kwban for why istart=0 is much preferred
 eth_fast:lplane=.TRUE.,lscalu=.FALSE.,nsim=4:
 eth_normal::npar,kpar
 eth_slow:lplane=.TRUE.,lscalu=.FALSE.,nsim=4:

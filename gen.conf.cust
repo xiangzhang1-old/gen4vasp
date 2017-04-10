@@ -1,4 +1,6 @@
 nonmag::ispin=1::1
+ncl::isym=-1::2
+generci::nelm=60::0
 dos::emax=-10,emin=10,nedos=1500,lorbit=11::0
 fm::ispin=2::1
 afm::ispin=2::1

@@ -6,7 +6,7 @@ fi
 cp KPOINTS-$filename KPOINTS
 cp POSCAR POSCAR5
 sed -i '6d' POSCAR
-$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 && echo "gen.source.check.memory warning: makeparam failed"
+$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 
 cp POSCAR5 POSCAR
 rm POSCAR5
 rm CHGCAR OUTPAR vasprun.xml WAVECAR

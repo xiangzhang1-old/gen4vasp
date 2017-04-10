@@ -15,6 +15,13 @@ case $optional_flag in
         echo "gen.source.fromto warning: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: attempted to othercust customize {$tovar} value {${!fromvar}}, but value ${keywords[$tovar]} is already there. othercust not mandatory, given up. Comment: {$fromto_comment}"
     fi
     ;;
+ 2)
+    if [[ -z "${keywords[$tovar]}" ]] ; then
+        eval "declare -A keywords[$tovar]=\"\${$fromvar}\""
+    elif [[ "${keywords[$tovar]}" != "${!fromvar}" ]] ; then
+        echo "gen.source.fromto HIGHLY SUSPICIOUS fail-to-overwrite WARNING: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: attempted to othercust customize {$tovar} value {${!fromvar}}, but value ${keywords[$tovar]} is already there. othercust not mandatory, given up. Comment: {$fromto_comment}"
+    fi
+    ;;
  *)
     echo "gen.source.fromto warning: in {${filename}} | {${keywords[sname]}}, folder {/${PWD##*/}}: the script was called without optional_flag specified. Comment: {$fromto_comment}"
     if [[ -z "${keywords[$tovar]}" ]] ; then

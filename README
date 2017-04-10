@@ -35,3 +35,6 @@ gen [modname] [kwname] [kwval]
 
 ==Dependency==
 requires makeparam utility in vasp4.X in SCRIPTDIR. makeparam will not work if needed memory > local machine memory.
+
+==Justification==
+extreme flexibility requires untyped variables
