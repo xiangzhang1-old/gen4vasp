@@ -6,9 +6,9 @@ fi
 cp KPOINTS-$filename KPOINTS
 cp POSCAR POSCAR5
 sed -i '6d' POSCAR
-if [[ ${keywords[lsorbit]} == ".TRUE." ]] ; then
+if [[ ${keywords[lsorbit]} == .TRUE. ]] ; then
  $SCRIPTDIR/makeparam.ncl > .tmp.makeparamlog 2>&1 
-elif [[ ${keywords[lsorbit]} == ".FALSE." ]] ; then
+elif [[ ${keywords[lsorbit]} == .FALSE. ]] ; then
  $SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 
 else
  echo "gen.source.check.memory: keyword {lsorbit} is neither .TRUE. or .FALSE., which doesn't make sense."
