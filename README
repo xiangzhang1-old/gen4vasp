@@ -1,3 +1,6 @@
+Status: deprecated. Replaced by the qchem package.
+
+
 ==Idea==
 The script is based on the notion of:
  - modules [ changeable_keyword, nonchangeable_keyword, customized_keyword, othercustomized_keyword ]

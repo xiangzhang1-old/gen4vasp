@@ -3,17 +3,13 @@ cp INCAR-$filename INCAR
 if [[ ${keywords[isym]} == -1 ]] ; then # makeparam doesn't seem to work with isym=-1
  sed -i "s/ISYM = -1/ISYM = 0/g" INCAR
 fi
+if [[ ${modnames[ncl]} == 1 ]] ; then
+ sed -i "s/LSORBIT = .TRUE./LSORBIT = .FALSE./g" INCAR
+fi
 cp KPOINTS-$filename KPOINTS
 cp POSCAR POSCAR5
 sed -i '6d' POSCAR
-if [[ ${keywords[lsorbit]} == .TRUE. ]] ; then
- $SCRIPTDIR/makeparam.ncl > .tmp.makeparamlog 2>&1 
-elif [[ ${keywords[lsorbit]} == .FALSE. ]] ; then
- $SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 
-else
- echo "gen.source.check.memory: keyword {lsorbit} is neither .TRUE. or .FALSE., which doesn't make sense."
- exit 64
-fi
+$SCRIPTDIR/makeparam > .tmp.makeparamlog 2>&1 
 cp POSCAR5 POSCAR
 rm POSCAR5
 rm CHGCAR OUTPAR vasprun.xml WAVECAR
@@ -37,7 +33,7 @@ if [[ ${modnames[hse06_l]} == "1" ]] || [[ ${modnames[hse06_h]} == "1" ]] ; then
 else 
  space_total=$((($space_projector_real*${keywords[npar]}+$space_projector_reciprocal*${keywords[npar]}+$space_wavefunc*${keywords[kpar]})/1024/1024/1024+${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*3/2))
 fi
-if [[ $keywords[isym] == -1 ]] ; then # makeparam doesn't seem to work with isym=-1, so i used memory@isym0*2. a 2-factor might be overkill? well, i'm lazy...
+if [[ $keywords[isym] == -1 ]] || [[ ${modnames[ncl]} == 1 ]] ; then # makeparam doesn't seem to work with isym=-1 or ncl, so i used memory@isym0*2. a 2-factor might be overkill? well, i'm lazy...
  space_total=$(($space_total*2))
 fi
 expected_allocatable_space=$((${nullifiedkw[totalnumbercores]}/${nullifiedkw[corespernode]}*${nullifiedkw[mempernode]}))
