@@ -1,4 +1,4 @@
-Workflow automation software for VASP based on Bash. Deprecated by the qchem package.
+Workflow automation code for VASP based on Bash. Deprecated by the qchem package.
 
 
 ==Idea==
